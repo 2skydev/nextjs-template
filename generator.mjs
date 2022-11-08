@@ -1,7 +1,6 @@
+import { exec } from 'child_process';
 import fs from 'fs';
 import { readdir } from 'fs/promises';
-import { exec } from 'child_process';
-
 import inquirer from 'inquirer';
 import inquirerPrompt from 'inquirer-autocomplete-prompt';
 
@@ -80,36 +79,6 @@ const createPageFileText = name => {
   ].join('\n');
 };
 
-const createHookFileText = name => {
-  // prettier-ignore
-  return [
-    `export const use${name} = () => {`,
-    `  return {};`,
-    `}`,
-    ``,    
-  ].join('\n');
-};
-
-const createTestFileText = name => {
-  // prettier-ignore
-  return [
-    `import { cleanup, render } from '@testing-library/react';`,
-    ``,
-    `import { describe, afterAll } from '@jest/globals';`,
-    ``,
-    `import ${name} from './index';`,
-    ``,
-    `afterAll(() => {`,
-    `  cleanup();`,
-    `});`,
-    ``,
-    `describe('${name} Test', () => {`,
-    `  const mount = render(<${name} />);`,
-    `});`,
-    ``,
-  ].join('\n');
-};
-
 const createPromptInput = options => {
   const { name = 'name', label } = options;
 
@@ -166,7 +135,7 @@ const editParentComponentExportFile = async parentComponentName => {
 };
 
 const createComponentAndFileOpen = (dir, name) => {
-  fs.mkdirSync(dir);
+  fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(`${dir}/styled.ts`, createStyledFileText(name));
   fs.writeFileSync(`${dir}/${name}.tsx`, createComponentFileText(name));
   fs.writeFileSync(`${dir}/index.ts`, createIndexFileText(name));
@@ -207,7 +176,7 @@ const start = async () => {
       }
 
       if (!fs.existsSync(pageDir)) {
-        fs.mkdirSync(pageDir);
+        fs.mkdirSync(pageDir, { recursive: true });
       }
 
       createComponentAndFileOpen(componentDir, componentName);
@@ -229,25 +198,7 @@ const start = async () => {
         process.exit(0);
       }
 
-      const { isCreateHook } = await inquirer.prompt([
-        {
-          type: 'confirm',
-          name: 'isCreateHook',
-          message: 'Create hook?',
-          default: false,
-        },
-      ]);
-
       createComponentAndFileOpen(componentDir, componentName);
-
-      fs.writeFileSync(
-        `${componentDir}/${componentName}.test.tsx`,
-        createTestFileText(componentName),
-      );
-
-      if (isCreateHook) {
-        fs.writeFileSync(`${componentDir}/hooks.ts`, createHookFileText(componentName));
-      }
 
       break;
     }
